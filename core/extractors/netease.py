@@ -19,11 +19,10 @@ from core.extractor import Extractor
 
 
 class Netease(Extractor):
-    def __init__(self):
-        pass
+    def __init__(self, session):
+        super(Netease, self).__init__(session)
 
     def search(self, keyword, count=5) -> list:
-        print('Netease')
         ''' 从网易云音乐搜索 '''
         eparams = {
             'method': 'POST',
@@ -37,12 +36,11 @@ class Netease(Extractor):
         }
         data = {'eparams': self._encode_netease_data(eparams)}
 
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({
             'referer': 'http://music.163.com/',
         })
-        r = s.post('http://music.163.com/api/linux/forward', data=data)
+        r = self.session.post('http://music.163.com/api/linux/forward', data=data)
 
         if r.status_code != requests.codes.ok:
             raise RequestError(r.text)
@@ -93,12 +91,11 @@ class Netease(Extractor):
         }
         data = {'eparams': self._encode_netease_data(eparams)}
 
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({
             'referer': 'http://music.163.com/',
         })
-        r = s.post('http://music.163.com/api/linux/forward', data=data)
+        r = self.session.post('http://music.163.com/api/linux/forward', data=data)
 
         if r.status_code != requests.codes.ok:
             raise RequestError(r.text)
@@ -123,5 +120,3 @@ class Netease(Extractor):
         fix = chr(pad) * pad
         return binascii.hexlify(encryptor.encrypt(data + fix)).upper().decode()
 
-# search = netease_search
-# download = netease_download

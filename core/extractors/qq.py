@@ -19,8 +19,8 @@ from utils.customlog import CustomLog
 logger = CustomLog(__name__).getLogger()
 
 class QQ(Extractor):
-    def __init__(self):
-        pass
+    def __init__(self,session):
+        super(QQ, self).__init__(session)
 
     def search(self, keyword, count=5) -> list:
         ''' 搜索音乐 '''
@@ -30,15 +30,14 @@ class QQ(Extractor):
             'p': 1,
             'n': count
         }
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({
             'referer': 'http://m.y.qq.com',
             'User-Agent': glovar.IOS_USERAGENT
         })
 
         music_list = []
-        r = s.get('http://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp', params=params)
+        r = self.session.get('http://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp', params=params)
         if r.status_code != requests.codes.ok:
             raise RequestError(r.text)
         j = r.json()
@@ -79,14 +78,13 @@ class QQ(Extractor):
             'format': 'json',
             'json': 3
         }
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({
             'referer': 'http://y.qq.com',
             'User-Agent': glovar.IOS_USERAGENT
         })
 
-        r = s.get('http://base.music.qq.com/fcgi-bin/fcg_musicexpress.fcg', params=params)
+        r = self.session.get('http://base.music.qq.com/fcgi-bin/fcg_musicexpress.fcg', params=params)
         if r.status_code != requests.codes.ok:
             raise RequestError(r.text)
         j = r.json()
@@ -98,7 +96,7 @@ class QQ(Extractor):
         for prefix in ['M800', 'M500', 'C400']:
             url = 'http://dl.stream.qqmusic.qq.com/%s%s.mp3?vkey=%s&guid=%s&fromtag=1' % \
                   (prefix, music['mid'], vkey, guid)
-            size = content_length(url)
+            size = content_length(self.session, url)
             if size > 0:
                 music['url'] = url
                 music['rate'] = 320 if prefix == 'M800' else 128
@@ -108,7 +106,3 @@ class QQ(Extractor):
         music['name'] = '%s - %s.mp3' % (music['title'], music['singer'])
 
         music_download(music)
-
-
-# search = qq_search
-# download = qq_download

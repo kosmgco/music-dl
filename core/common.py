@@ -1,5 +1,5 @@
 #!/usr/bin/env python  
-#-*- coding:utf-8 _*-  
+#-*- coding:utf-8 _*-
 """
 @author: HJK 
 @file: common.py 
@@ -13,12 +13,13 @@ import requests
 import wget
 import glovar
 from utils import echo
+import config.config
 
 
 def music_download(music):
     ''' 下载音乐保存到本地 '''
     echo.info(music)
-    wget.download(music['url'], out='./music/%s' % music['name'])
+    wget.download(music['url'], out='%s/%s' % (config.config.download_dir, music['name']))
 
 
 def url_available(url) -> bool:
@@ -28,9 +29,8 @@ def url_available(url) -> bool:
     return r.status_code == requests.codes.ok
 
 
-def content_length(url) -> int:
-    s = requests.Session()
-    s.headers.update(glovar.FAKE_HEADERS)
+def content_length(session, url) -> int:
+    session.headers.update(glovar.FAKE_HEADERS)
     r = s.head(url)
     if r.status_code == requests.codes.ok:
         return int(r.headers.get('Content-Length', 0))

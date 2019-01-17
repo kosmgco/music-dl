@@ -1,5 +1,5 @@
 #!/usr/bin/env python  
-#-*- coding:utf-8 _*-  
+# -*- coding:utf-8 _*-
 """
 @author: HJK 
 @file: kugou.py 
@@ -17,10 +17,10 @@ from utils.customlog import CustomLog
 
 logger = CustomLog(__name__).getLogger()
 
-class Kugou(Extractor):
-    def __init__(self):
-        pass
 
+class Kugou(Extractor):
+    def __init__(self, session):
+        super(Kugou, self).__init__(session)
 
     def search(self, keyword, count=5) -> list:
         ''' 搜索音乐 '''
@@ -31,15 +31,14 @@ class Kugou(Extractor):
             'page': 1,
             'pagesize': count
         }
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({'referer': 'http://www.kugou.com'})
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({'referer': 'http://www.kugou.com'})
 
         music_list = []
-        r = s.get('http://songsearch.kugou.com/song_search_v2', params=params)
-        if r.status_code != requests.codes.ok:
-            raise RequestError(r.text)
-        j = r.json()
+        resp = self.session.get('http://songsearch.kugou.com/song_search_v2', params=params)
+        if resp.status_code != requests.codes.ok:
+            raise RequestError(resp.text)
+        j = resp.json()
         if j['status'] != 1:
             raise ResponseError(j)
 
@@ -51,7 +50,6 @@ class Kugou(Extractor):
                 'duration': str(datetime.timedelta(seconds=m['Duration'])),
                 'singer': m['SingerName'],
                 'album': m['AlbumName'],
-                # 'ext': m['ExtName'],
                 'size': round(m['FileSize'] / 1048576, 2),
                 'source': 'kugou'
             }
@@ -65,35 +63,30 @@ class Kugou(Extractor):
 
         return music_list
 
-
     def download(self, music):
         ''' 根据hash从酷狗下载音乐 '''
         params = {
             'cmd': 'playInfo',
             'hash': music['hash']
         }
-        s = requests.Session()
-        s.headers.update(glovar.FAKE_HEADERS)
-        s.headers.update({
+        self.session.headers.update(glovar.FAKE_HEADERS)
+        self.session.headers.update({
             'referer': 'http://m.kugou.com',
             'User-Agent': glovar.IOS_USERAGENT
         })
 
-        r = s.get('http://m.kugou.com/app/i/getSongInfo.php', params=params)
+        r = self.session.get('http://m.kugou.com/app/i/getSongInfo.php', params=params)
         if r.status_code != requests.codes.ok:
             raise RequestError(r.text)
         j = r.json()
         if j['status'] != 1:
             raise ResponseError(j)
 
-        music['ext'] = j['extName']
-        music['name'] = j['fileName'] + '.' + j['extName']
-        music['size'] = round(j['fileSize'] / 1048576, 2)
-        music['rate'] = j['bitRate']
-        music['url'] = j['url']
-
+        music = {
+            'ext': j.get('extName', ''),
+            'name': j.get('fileName', '') + '.' + j.get('extName', ''),
+            'size': round(j.get('fileSize') / 1048576, 2),
+            'rate': j.get('bitRate', ''),
+            'url': j.get('url')
+        }
         music_download(music)
-
-
-# search = kugou_search
-# download = kugou_download
